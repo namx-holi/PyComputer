@@ -1,10 +1,15 @@
 import bitmath
+import time
 
 
 # TODO: Use the following page to implement a better set associative
 #  cache with byte arrays and etc
 #  https://www.sciencedirect.com/topics/computer-science/set-associative-cache
 
+
+# Used to simulate reading from RAM as slow
+SIMULATE_SLOW_RAM = True
+SLOW_RAM_DELAY = 0.5
 
 
 
@@ -123,11 +128,19 @@ class RandomAccessMemory:
 
 
 	def read_line(self, address):
+		# Simulate RAM being slow
+		if SIMULATE_SLOW_RAM:
+			time.sleep(SLOW_RAM_DELAY)
+
 		cache_line_address = self._calc_cache_line_address(address)
 		return self.data[cache_line_address:cache_line_address+self.cache_line_size]
 
 
 	def write_line(self, address, cache_line):
+		# Simulate RAM being slow
+		if SIMULATE_SLOW_RAM:
+			time.sleep(SLOW_RAM_DELAY)
+
 		cache_line_address = self._calc_cache_line_address(address)
 		self.data[cache_line_address:cache_line_address+self.cache_line_size] = cache_line
 

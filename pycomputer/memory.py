@@ -1,4 +1,4 @@
-import bitmath
+from pycomputer import bitmath
 import time
 
 
@@ -9,7 +9,7 @@ import time
 
 # Used to simulate reading from RAM as slow
 SIMULATE_SLOW_RAM = True
-SLOW_RAM_DELAY = 0.5
+SLOW_RAM_DELAY = 4
 
 
 
@@ -149,12 +149,13 @@ class RandomAccessMemory:
 		self.data[:len(b)] = b
 
 
-	def memdump(self):
-		print("== MEMORY DUMP START ==")
+	def dumps(self):
+		s = "== MEMORY DUMP START =="
 		row_width = 16
 		for x in range(0, self.size, row_width):
-			print(self.data[x:x+row_width].hex())
-		print("== MEMORY DUMP END ==")
+			s += f"\n{self.data[x:x+row_width].hex()}"
+		s += "\n== MEMORY DUMP END =="
+		return s
 
 
 
@@ -268,12 +269,13 @@ class SetAssociativeCache:
 		return popped_address, popped_line
 
 
-	def memdump(self):
-		print("== CACHE DUMP START ==")
+	def dumps(self):
+		s = "== CACHE DUMP START =="
 		for x in range(self.set_count):
-			print(f"Set {x}:")
-			self.sets[x].memdump(indent=2, header=False)
-		print("== CACHE DUMP END ==")
+			s += f"\nSet {x}:\n"
+			s += self.sets[x].dumps(indent=2, header=False)
+		s += "\n== CACHE DUMP END =="
+		return s
 
 
 
@@ -344,14 +346,20 @@ class SetAssociativeCacheSet:
 		return popped_tag, popped_line
 
 
-	def memdump(self, indent=0, header=True):
-		if header: print("== CACHE SET DUMP START ==")
+	def dumps(self, indent=0, header=True):
+		s = ""
+		if header: s += "== CACHE SET DUMP START ==\n"
 		for x in range(self.associativity):
 			if self.tags[x] == None:
-				print(f"{' '*indent}tag:{self.tags[x]}, data:{self.data[x]}")
+				s += f"{' '*indent}tag:{self.tags[x]}, data:{self.data[x]}\n"
 			else:
-				print(f"{' '*indent}tag:{bin(self.tags[x])}, data:{self.data[x].hex()}")
-		if header: print("== CACHE SET DUMP END ==")
+				s += f"{' '*indent}tag:{bin(self.tags[x])}, data:{self.data[x].hex()}\n"
+		if header:
+			s += "== CACHE SET DUMP END =="
+		else:
+			# Remove the last newline
+			s = s.rstrip("\n")
+		return s
 
 
 
@@ -394,20 +402,20 @@ if __name__ == "__main__":
 	mh.load_ram_from_bytearray(init_data)
 
 	# Dump the state
-	mh.ram.memdump()
-	mh.cache.memdump()
+	print(mh.ram.dumps())
+	print(mh.cache.dumps())
 
 
 	print("\n\n\nTESTING READING!!!")
 	# Perform our first read
 	x = mh.read_byte(0x73)
 	print(hex(x))
-	mh.cache.memdump()
+	print(mh.cache.dumps())
 
 	# Perform second read. Should be from cache
 	x = mh.read_byte(0x70)
 	print(hex(x))
-	mh.cache.memdump()
+	print(mh.cache.dumps())
 
 
 	print("\n\n\nTESTING EVICTION!!!!")
@@ -428,23 +436,23 @@ if __name__ == "__main__":
 	_ = mh.read_line(0xC8)
 	_ = mh.read_line(0x7C)
 	_ = mh.read_line(0xAC)
-	mh.cache.memdump()
+	print(mh.cache.dumps())
 
 	x = mh.read_byte(0xEA)
 	print(hex(x)) # Should be 7
-	mh.cache.memdump()
+	print(mh.cache.dumps())
 
 
 
 	print("\n\n\nTESTING WRITING!!!!")
 	# Writing to memory test
 	mh.write_byte(0x00, 0)
-	mh.ram.memdump()
-	mh.cache.memdump()
+	print(mh.ram.dumps())
+	print(mh.cache.dumps())
 
 	# Perform two more reads to force cache
 	_ = mh.read_line(0x10)
-	mh.ram.memdump()
+	print(mh.ram.dumps())
 	_ = mh.read_line(0x20)
-	mh.ram.memdump()
-	mh.cache.memdump()
+	print(mh.ram.dumps())
+	print(mh.cache.dumps())
